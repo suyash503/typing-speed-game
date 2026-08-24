@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  username     String       @unique
+  email        String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  results      GameResult[]
+}
+
+model GameResult {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // durationMs already includes penaltyMs. Keeping one combined number means the
+  // leaderboard can just sort on this column instead of computing the real score
+  // on every read. The raw parts are kept alongside it so a result can still be
+  // broken down in the UI.
+  durationMs Int
+  penaltyMs  Int
+  mistakes   Int
+  charCount  Int
+
+  createdAt DateTime @default(now())
+
+  // Covers "my best" (userId + sort) and keeps the leaderboard groupBy cheap.
+  @@index([userId, durationMs])
+}
