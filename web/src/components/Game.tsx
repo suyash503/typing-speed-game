@@ -160,7 +160,10 @@ export function Game({ best, onNewBest, onFinished }: Props) {
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false);
-          if (playing) requestAnimationFrame(() => inputRef.current?.focus());
+          // Deliberately setTimeout and not requestAnimationFrame: rAF is paused
+          // while the tab isn't rendering, so focus would never come back if the
+          // window lost focus. This has to run after the click that stole it.
+          if (playing) window.setTimeout(() => inputRef.current?.focus(), 0);
         }}
         aria-label="Typing input"
       />
