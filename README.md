@@ -25,8 +25,10 @@ cd web && bun install && bun run dev
 
 The app is on `http://localhost:5173`.
 
-> If you already run Postgres locally, port 5432 will be taken. Either stop your local
-> instance or change the host port in `docker-compose.yml`.
+> If you already run Postgres locally, port 5432 will be taken and the `db` container will
+> fail to bind. Either stop your local instance or change the host port in
+> `docker-compose.yml` - the API talks to the database over the compose network, so only
+> the host mapping is affected.
 
 ### Without Docker
 

@@ -88,7 +88,12 @@ beforeAll(async () => {
     const stdout = await new Response(migrate.stdout).text();
     throw new Error(`prisma migrate deploy failed on the test database:\n${stdout}\n${stderr}`);
   }
-});
+
+  // Open the connection here rather than letting the first beforeEach pay for it.
+  // Against a database that has only just started, that first connect can take
+  // longer than the per-hook timeout and fail the run for no real reason.
+  await prisma.$connect();
+}, 60_000);
 
 beforeEach(async () => {
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "GameResult", "User" RESTART IDENTITY CASCADE');
