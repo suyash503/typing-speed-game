@@ -58,6 +58,12 @@ because you cannot focus a hidden element - it is positioned off to the side at 
 opacity instead. It refocuses on blur while a round is running, clicking the card refocuses
 it, and a warning appears if focus is lost.
 
+Worth mentioning if asked what went wrong along the way: the refocus was originally in a
+`requestAnimationFrame`, which looked fine until I tested it in a window that wasn't
+actively rendering. rAF is paused when a tab isn't compositing, so focus never came back.
+A `setTimeout(..., 0)` does not depend on the compositor and still runs after the click
+that stole focus, which is why the code uses it.
+
 **Best score.** Kept in `localStorage` per the spec, but reconciled with the server's
 `myBest` on load so a new browser doesn't reset your record. The Success / Try again
 verdict uses the server's answer because the server knows the full history.
