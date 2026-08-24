@@ -19,6 +19,11 @@ docker compose up --build
 That starts Postgres, applies the migrations and serves GraphQL on
 `http://localhost:4000/graphql`. Then start the frontend separately:
 
+This path is tested, not assumed: the stack was built and run from a clean machine
+(Docker 29.7.2 on WSL2), the API applied its migrations inside the container, and
+registration, game submission, the leaderboard and both error paths were exercised over
+HTTP against the containerised database.
+
 ```bash
 cd web && bun install && bun run dev
 ```
