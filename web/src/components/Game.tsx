@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, gql } from '../api';
-import {
-  GAME_LENGTH,
-  PENALTY_MS,
-  formatMs,
-  makeSequence,
-  readLocalBest,
-  writeLocalBest,
-} from '../game';
+import { GAME_LENGTH, PENALTY_MS, formatMs, makeSequence } from '../game';
 
 const SUBMIT_GAME = /* GraphQL */ `
   mutation SubmitGame($input: SubmitGameInput!) {
@@ -87,12 +80,8 @@ export function Game({ best, onNewBest, onFinished }: Props) {
     setStatus('done');
     setElapsed(durationMs);
 
-    const localBest = readLocalBest();
-    const beatLocalBest = localBest === null || durationMs < localBest;
-    if (beatLocalBest) {
-      writeLocalBest(durationMs);
-      onNewBest(durationMs);
-    }
+    const beatLocalBest = best === null || durationMs < best;
+    if (beatLocalBest) onNewBest(durationMs);
 
     // Show the round immediately using what we know locally, then let the server's
     // answer replace it - the server has the authoritative best across devices.
@@ -100,7 +89,7 @@ export function Game({ best, onNewBest, onFinished }: Props) {
       durationMs,
       mistakes: finalMistakes,
       isPersonalBest: beatLocalBest,
-      previousBestMs: localBest,
+      previousBestMs: best,
     });
 
     try {

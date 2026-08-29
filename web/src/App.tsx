@@ -18,35 +18,52 @@ const ME = /* GraphQL */ `
   }
 `;
 
+// The stored best belongs to one player, so it can only be read once we know who
+// is signed in. If the server has a faster round than this browser knows about -
+// played on another machine - that becomes the local record too.
+function loadBest(userId: string, serverBest: number | null): number | null {
+  const local = readLocalBest(userId);
+
+  if (serverBest !== null && (local === null || serverBest < local)) {
+    writeLocalBest(userId, serverBest);
+    return serverBest;
+  }
+  return local;
+}
+
 export function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [best, setBest] = useState<number | null>(readLocalBest);
+  const [best, setBest] = useState<number | null>(null);
   const [checkingSession, setCheckingSession] = useState(Boolean(getToken()));
   const [boardKey, setBoardKey] = useState(0);
 
-  // Restore the session on load, and take the server's best score if it beats
-  // whatever this browser happens to have in localStorage.
+  // Restore the session on load.
   useEffect(() => {
     if (!getToken()) return;
 
     gql<{ me: User | null; myBest: { durationMs: number } | null }>(ME)
       .then((data) => {
         setUser(data.me);
-        if (data.myBest) {
-          const local = readLocalBest();
-          if (local === null || data.myBest.durationMs < local) {
-            writeLocalBest(data.myBest.durationMs);
-            setBest(data.myBest.durationMs);
-          }
-        }
+        if (data.me) setBest(loadBest(data.me.id, data.myBest?.durationMs ?? null));
       })
       .catch(() => setToken(null))
       .finally(() => setCheckingSession(false));
   }, []);
 
+  function signIn(signedIn: User) {
+    setUser(signedIn);
+    setBest(readLocalBest(signedIn.id));
+  }
+
+  function recordBest(ms: number) {
+    if (user) writeLocalBest(user.id, ms);
+    setBest(ms);
+  }
+
   function signOut() {
     setToken(null);
     setUser(null);
+    setBest(null);
   }
 
   if (checkingSession) {
@@ -69,14 +86,14 @@ export function App() {
 
       {user ? (
         <>
-          <Game best={best} onNewBest={setBest} onFinished={() => setBoardKey((n) => n + 1)} />
+          <Game best={best} onNewBest={recordBest} onFinished={() => setBoardKey((n) => n + 1)} />
           <section className="card">
             <h2>Leaderboard</h2>
             <Leaderboard currentUser={user.username} refreshKey={boardKey} />
           </section>
         </>
       ) : (
-        <AuthForm onAuthenticated={setUser} />
+        <AuthForm onAuthenticated={signIn} />
       )}
     </main>
   );
